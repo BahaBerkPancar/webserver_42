@@ -5,6 +5,7 @@ CXXFLAGS    = -Wall -Wextra -Werror -std=c++98 -Iinclude
 OBJDIR      = .obj
 SRCS        =   srcs/main.cpp \
 				srcs/Lexer.cpp \
+				srcs/Parser.cpp \
 				# srcs/etc/checks.cpp \
 				# srcs/etc/Utils.cpp \
 				# srcs/config/Utils.cpp \
