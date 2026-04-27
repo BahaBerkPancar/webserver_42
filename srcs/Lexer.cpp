@@ -24,11 +24,10 @@ void Lexer::skipWhitespace() {
 }
  
 void Lexer::skipComment() {
-    // '#' zaten görüldü, satır sonuna kadar atla
     while (_pos < _input.size() && peek() != '\n')
         advance();
     if (_pos < _input.size())
-        advance();  // '\n' karakterini de atla
+        advance();
 }
  
 Token Lexer::readWord() {
@@ -42,7 +41,7 @@ Token Lexer::readWord() {
         word += advance();
     }
     if (word.empty())
-        throw std::runtime_error("Lexer: beklenmedik boş token");
+        throw std::runtime_error("Lexer: unexpected empty token");
     return Token(TOKEN_WORD, word, startLine);
 }
  

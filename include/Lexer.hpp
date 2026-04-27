@@ -11,7 +11,7 @@ class Lexer {
 public:
     explicit Lexer(const std::string& input);
  
-    // Tüm token'ları üretip döndürür
+    // Tokenize input and return all tokens
     std::vector<Token> tokenize();
  
 private:
@@ -19,11 +19,11 @@ private:
     size_t      _pos;
     int         _line;
  
-    char  peek() const;      // mevcut karaktere bak, ilerleme
-    char  advance();         // karakteri al ve ilerle
-    void  skipWhitespace();  // boşluk / tab / newline atla
-    void  skipComment();     // '#' dan satır sonuna kadar atla
-    Token readWord();        // boşluk / { / } / ; gelene kadar oku
+    char  peek() const;      // Peek at current character without advancing
+    char  advance();         // Get current character and advance position
+    void  skipWhitespace();  // Skip whitespace characters
+    void  skipComment();     // Skip comment line (from # to newline)
+    Token readWord();        // Read word until whitespace or special char
 };
  
 #endif

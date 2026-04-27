@@ -7,7 +7,7 @@
 #include <map>
 #include <utility>  // std::pair
 
-// ===== Token =====
+// ===== Token Type Enum =====
  
 enum TokenType {
     TOKEN_WORD,
@@ -26,44 +26,37 @@ struct Token {
         : type(t), value(v), line(l) {}
 };
  
-// ===== LocationConfig =====
+// ===== Location Configuration =====
  
 struct LocationConfig {
-    std::string              path;           // "/", "/api", "/upload"
-    std::vector<std::string> methods;        // ["GET", "POST", "DELETE"]
-    std::string              root;           // "/var/www/html"
-    std::string              index;          // "index.html"
-    bool                     autoindex;      // true / false
-    std::string              redirect;       // "301 /yeni/yol" — boşsa yok
-    std::string              upload_dir;     // "/tmp/uploads"  — boşsa yok
-    std::string              cgi_extension;  // ".php", ".py"   — boşsa yok
-    std::string              cgi_path;       // "/usr/bin/php"  — boşsa yok
+    std::string              path;           // URL path: "/", "/api", etc.
+    std::vector<std::string> methods;        // Allowed HTTP methods
+    std::string              root;           // Document root directory
+    std::string              index;          // Default file in directory
+    bool                     autoindex;      // Enable directory listing
+    std::string              redirect;       // HTTP redirect (empty if none)
+    std::string              upload_dir;     // Upload directory (empty if disabled)
+    std::string              cgi_extension;  // CGI file extension (e.g. .php)
+    std::string              cgi_path;       // CGI interpreter path (empty if disabled)
  
     LocationConfig()
         : autoindex(false) {}
 };
  
 
-// ===== ServerConfig =====
+// ===== Server Configuration =====
  
 struct ServerConfig {
     std::vector<std::pair<std::string, int> > listen;
-    // [("0.0.0.0", 8080), ("127.0.0.1", 9090)]
-    // C++98: "> >" arasında boşluk zorunlu
- 
     std::map<int, std::string> error_pages;
-    // { 404 -> "/errors/404.html", 500 -> "/errors/50x.html" }
- 
-    size_t client_max_body_size;
-    // byte cinsinden — "1m" -> 1048576
- 
     std::vector<LocationConfig> locations;
+    size_t client_max_body_size;
  
     ServerConfig()
-        : client_max_body_size(1048576) {}  // varsayılan: 1MB
+        : client_max_body_size(1048576) {}
 };
  
-// ===== Config =====
+// ===== Global Configuration =====
  
 struct Config {
     std::vector<ServerConfig> servers;

@@ -4,7 +4,7 @@
 #include <fstream>
 #include <sstream>
  
-// Token tipini string'e çeviren yardımcı
+// Convert token type to string for debugging
 static std::string tokenTypeName(TokenType t) {
     switch (t) {
         case TOKEN_WORD:      return "WORD";
@@ -18,14 +18,14 @@ static std::string tokenTypeName(TokenType t) {
 
 int main(int argc, char* argv[]) {
     if (argc != 2) {
-        std::cerr << "Kullanim: ./webserv <config_dosyasi>\n";
+        std::cerr << "Usage: ./webserv <config_file>\n";
         return 1;
     }
  
-    // Dosyayı oku
+    // Read configuration file
     std::ifstream file(argv[1]);
     if (!file.is_open()) {
-        std::cerr << "Hata: dosya acilamadi: " << argv[1] << "\n";
+        std::cerr << "Error: failed to open file: " << argv[1] << "\n";
         return 1;
     }
  
@@ -33,20 +33,18 @@ int main(int argc, char* argv[]) {
     ss << file.rdbuf();
     std::string content = ss.str();
  
-    // Lexer'ı çalıştır
     try {
         Lexer lexer(content);
         std::vector<Token> tokens = lexer.tokenize();
  
-        // Token'ları ekrana bas (test amaçlı)
         for (size_t i = 0; i < tokens.size(); i++) {
-            std::cout << "satir:" << tokens[i].line
-                      << "  tip:" << tokenTypeName(tokens[i].type)
-                      << "  deger:'" << tokens[i].value << "'\n";
+            std::cout << "line:" << tokens[i].line
+                      << "  type:" << tokenTypeName(tokens[i].type)
+                      << "  value:'" << tokens[i].value << "'\n";
         }
     }
     catch (const std::exception& e) {
-        std::cerr << "Hata: " << e.what() << "\n";
+        std::cerr << "Error: " << e.what() << "\n";
         return 1;
     }
  
