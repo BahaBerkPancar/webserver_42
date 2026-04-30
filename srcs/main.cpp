@@ -33,7 +33,7 @@ int main(int argc, char* argv[]) {
         Config config = parser.parse();
 
         std::cout << "Config loaded: " << config.servers.size() << " server(s)\n";
-
+        
         return 0;
     }
     catch (const std::exception& e) {
