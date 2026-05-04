@@ -1,6 +1,7 @@
 
 #include "Lexer.hpp"
 #include "Parser.hpp"
+#include "../include/ServerManager.hpp"
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -33,7 +34,7 @@ int main(int argc, char* argv[]) {
         Config config = parser.parse();
 
         std::cout << "Config loaded: " << config.servers.size() << " server(s)\n";
-
+        Server_Manager a(config);
         return 0;
     }
     catch (const std::exception& e) {
