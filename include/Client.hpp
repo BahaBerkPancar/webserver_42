@@ -10,7 +10,7 @@ enum Client_State{
     DONE,
 };
 
-struct client{
+struct Client{
     int fd;
     int index;
     Client_State state;
@@ -18,7 +18,7 @@ struct client{
     std::string write_buff;
     std::time_t last_request;
 
-    client(int fd, int index): fd(fd), index(index), state(READING_REQUEST), last_request(std::time(NULL)){}
+    Client(int fd, int index): fd(fd), index(index), state(READING_REQUEST), last_request(std::time(NULL)){}
 };
 
 #endif
