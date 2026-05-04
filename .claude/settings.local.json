@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pdftotext /Users/MKRAForce/all_my_projects/webserver_42/documents/webserv_en.subject.pdf -)"
+    ]
+  }
+}
