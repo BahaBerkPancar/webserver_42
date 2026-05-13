@@ -68,6 +68,51 @@ int Server_Manager::create_Listen_socket(int port, std::string host){
     return(fd);
 }
 
+std::vector <pollfd>Server_Manager::create_listener_fds(){
+    std::vector <pollfd> ret;
+    for (size_t i = 0; i < listeners.size(); ++i)
+    {
+        pollfd fds;
+        fds.fd = listeners[i].fd;
+        fds.events = POLLIN;
+        fds.revents = 0;
+        ret.push_back(fds);
+    }
+    return(ret);
+}
+
 void Server_Manager::run(){
     running = true;
+    std::vector <pollfd> listeners_fds = create_listener_fds();
+
+    while(running)
+    {
+        std::vector <pollfd> fds = listeners_fds;
+        for (std::map <int, Client>::iterator i = _clients.begin(); i != _clients.end(); ++i){
+            pollfd poll_fd;
+            poll_fd.fd = i->first;
+            poll_fd.events = POLLIN;
+            poll_fd.revents = 0;
+            fds.push_back(poll_fd);
+        }
+        int poll_ret = poll(fds.data(), fds.size(), TIMEOUT_MS);
+        if (poll_ret == -1)
+            throw std::runtime_error("poll failed");
+
+        for (size_t i = 0; i < fds.size(); ++i){
+            if(fds[i].revents & POLLIN){
+                if(i < listeners.size()){
+                    struct sockaddr_in client_addr;
+                    socklen_t socklen = sizeof(client_addr);
+                    int clientfd =  accept(fds[i].fd, reinterpret_cast<sockaddr *> (&client_addr), &socklen);
+                    if(clientfd == -1)
+                        continue;
+                    setNonBlocking(clientfd);
+                }
+                else{
+
+                }
+            }
+        }
+    }
 }

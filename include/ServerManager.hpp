@@ -19,7 +19,7 @@ class Server_Manager{
         
         void init_listeners();
         int create_Listen_socket(int, std::string);
-
+        std::vector <pollfd>create_listener_fds();
     public:
         explicit    Server_Manager(Config &Conf);
         ~Server_Manager();
