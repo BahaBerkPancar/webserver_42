@@ -108,7 +108,8 @@ void Server_Manager::run(){
                     if(clientfd == -1)
                         continue;
                     setNonBlocking(clientfd);
-                    _clients[clientfd] = Client(clientfd, listeners[i].index);
+                    _clients.insert(std::make_pair(clientfd, Client(clientfd, listeners[i].index)));
+                    std::cout << "[webserver] New connection on fd " << clientfd << "\n";
                 }
                 else{
 
