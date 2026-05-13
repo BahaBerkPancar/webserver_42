@@ -108,6 +108,7 @@ void Server_Manager::run(){
                     if(clientfd == -1)
                         continue;
                     setNonBlocking(clientfd);
+                    _clients[clientfd] = Client(clientfd, listeners[i].index);
                 }
                 else{
 
