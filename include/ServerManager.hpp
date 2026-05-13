@@ -24,6 +24,7 @@ class Server_Manager{
         explicit    Server_Manager(Config &Conf);
         ~Server_Manager();
         void printConfig();
+        void run();
 };
 
 #endif

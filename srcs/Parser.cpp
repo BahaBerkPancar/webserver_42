@@ -105,6 +105,10 @@ void Parser::parseServerDirective(ServerConfig& server) {
             std::string portStr = hostPort.value.substr(colonPos + 1);
             port = std::atoi(portStr.c_str());
         }
+        else {
+            host = "";
+            port = std::atoi(hostPort.value.c_str());
+        }//;
 
         server.listen.push_back(std::make_pair(host, port));
     }

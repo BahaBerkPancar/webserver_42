@@ -27,6 +27,10 @@ void Server_Manager::init_listeners(){
             socket.port = S_config.listen[j].second;
             socket.index = static_cast<int>(i);
             socket.fd = create_Listen_socket(socket.port, socket.host);
+            if (listen(socket.fd, SOMAXCONN) == -1){
+                close(socket.fd);
+                throw std::runtime_error("listen() failed on port " + std::to_string(socket.port));
+            }
             listeners.push_back(socket);
             std::cout << "[webserver] Listening on " << socket.host << ":" << socket.port << "\n";
         }
@@ -61,7 +65,9 @@ int Server_Manager::create_Listen_socket(int port, std::string host){
         close(fd);
         throw std::runtime_error("bind() failed for port " + std::to_string(port));
     }
-    if (!running && host.empty())///
-        return(fd);
     return(fd);
+}
+
+void Server_Manager::run(){
+    running = true;
 }
