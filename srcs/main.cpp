@@ -35,6 +35,7 @@ int main(int argc, char* argv[]) {
 
         std::cout << "Config loaded: " << config.servers.size() << " server(s)\n";
         Server_Manager a(config);
+        a.run();
         return 0;
     }
     catch (const std::exception& e) {

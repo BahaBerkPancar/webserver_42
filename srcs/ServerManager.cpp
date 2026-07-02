@@ -1,4 +1,5 @@
 #include "../include/ServerManager.hpp"
+#include "../include/Request.hpp"
 #include <iostream>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -111,8 +112,35 @@ void Server_Manager::run(){
                     _clients.insert(std::make_pair(clientfd, Client(clientfd, listeners[i].index)));
                     std::cout << "[webserver] New connection on fd " << clientfd << "\n";
                 }
-                else{
-
+                else
+                {
+                    char buffer[4096];
+                    int bytes = recv(fds[i].fd, buffer, sizeof(buffer), 0);
+                    if (bytes <= 0)
+                    {
+                        close(fds[i].fd);
+                        _clients.erase(fds[i].fd);
+                    }
+                    else
+                    {
+                        std::map<int, Client>::iterator it = _clients.find(fds[i].fd);
+                        if (it != _clients.end())
+                        {
+                            it->second.read_buff.append(buffer, bytes);
+                            it->second.last_request = std::time(NULL);
+                        }
+                        if (it->second.read_buff.find("\r\n\r\n") != std::string::npos)
+                        {
+                            Request req;
+                            req.parse(it->second.read_buff);
+                            std::cout << "Method: "  << req.method  << "\n";
+                            std::cout << "Path: "    << req.path    << "\n";
+                            std::cout << "Version: " << req.version << "\n";
+                            for (std::map<std::string, std::string>::iterator it = req.headers.begin(); it != req.headers.end(); ++it)
+                                std::cout << "Header: " << it->first << " = " << it->second << "\n";
+                            std::cout << "Body: [" << req.req_body << "]\n";
+                        }
+                    }
                 }
             }
         }

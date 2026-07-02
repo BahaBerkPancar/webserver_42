@@ -7,13 +7,13 @@ SRCS        =   srcs/main.cpp \
 				srcs/Lexer.cpp \
 				srcs/Parser.cpp \
 				srcs/ServerManager.cpp \
+				srcs/Request.cpp \
 				# srcs/etc/checks.cpp \
 				# srcs/etc/Utils.cpp \
 				# srcs/config/Utils.cpp \
 				# srcs/config/Config.cpp \
 				# srcs/server/Server.cpp \
 				# srcs/server/Client.cpp \
-				# srcs/request/HttpRequest.cpp \
 				# srcs/response/HttpResponse.cpp \
 				# srcs/cgi/CGI.cpp
 
