@@ -8,6 +8,8 @@ SRCS        =   srcs/main.cpp \
 				srcs/Parser.cpp \
 				srcs/ServerManager.cpp \
 				srcs/Request.cpp \
+				srcs/Response.cpp \
+				srcs/Router.cpp \
 				# srcs/etc/checks.cpp \
 				# srcs/etc/Utils.cpp \
 				# srcs/config/Utils.cpp \
