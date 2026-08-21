@@ -47,6 +47,7 @@ struct LocationConfig {
 // ===== Server Configuration =====
  
 struct ServerConfig {
+    std::string host;
     std::vector<std::pair<std::string, int> > listen;
     std::map<int, std::string> error_pages;
     std::vector<LocationConfig> locations;

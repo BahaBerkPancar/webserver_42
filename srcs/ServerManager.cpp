@@ -1,5 +1,7 @@
 #include "../include/ServerManager.hpp"
 #include "../include/Request.hpp"
+#include "../include/Router.hpp"
+#include "../include/Response.hpp"
 #include <iostream>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -8,6 +10,7 @@
 #include <unistd.h>
 
 //;
+
 Server_Manager::Server_Manager(Config &Conf) : Conf(Conf), running(false){
     init_listeners();
 }
@@ -89,20 +92,22 @@ void Server_Manager::run(){
     while(running)
     {
         std::vector <pollfd> fds = listeners_fds;
+        std::vector <int> client_fd_order;
         for (std::map <int, Client>::iterator i = _clients.begin(); i != _clients.end(); ++i){
             pollfd poll_fd;
             poll_fd.fd = i->first;
-            poll_fd.events = POLLIN;
+            poll_fd.events = (i->second.state == WRITING_RESPONCE) ? POLLOUT : POLLIN;
             poll_fd.revents = 0;
             fds.push_back(poll_fd);
+            client_fd_order.push_back(i->first);
         }
         int poll_ret = poll(fds.data(), fds.size(), TIMEOUT_MS);
         if (poll_ret == -1)
             throw std::runtime_error("poll failed");
 
         for (size_t i = 0; i < fds.size(); ++i){
-            if(fds[i].revents & POLLIN){
-                if(i < listeners.size()){
+            if(i < listeners.size()){
+                if(fds[i].revents & POLLIN){
                     struct sockaddr_in client_addr;
                     socklen_t socklen = sizeof(client_addr);
                     int clientfd =  accept(fds[i].fd, reinterpret_cast<sockaddr *> (&client_addr), &socklen);
@@ -110,37 +115,53 @@ void Server_Manager::run(){
                         continue;
                     setNonBlocking(clientfd);
                     _clients.insert(std::make_pair(clientfd, Client(clientfd, listeners[i].index)));
-                    std::cout << "[webserver] New connection on fd " << clientfd << "\n";
+                    std::cout << "[webserver] New connection on fd " << clientfd << " (total clients: " << _clients.size() << ")\n";
                 }
-                else
+                continue;
+            }
+
+            std::map<int, Client>::iterator it = _clients.find(fds[i].fd);
+            if (it == _clients.end())
+                continue;
+            Client &client = it->second;
+
+            if (fds[i].revents & (POLLHUP | POLLERR)){
+                close(client.fd);
+                _clients.erase(it);
+                continue;
+            }
+
+            if (fds[i].revents & POLLIN){
+                char buffer[4096];
+                int bytes = recv(client.fd, buffer, sizeof(buffer), 0);
+                if (bytes <= 0){
+                    close(client.fd);
+                    _clients.erase(it);
+                    continue;
+                }
+                client.read_buff.append(buffer, bytes);
+                client.last_request = std::time(NULL);
+                if (client.read_buff.find("\r\n\r\n") != std::string::npos)
                 {
-                    char buffer[4096];
-                    int bytes = recv(fds[i].fd, buffer, sizeof(buffer), 0);
-                    if (bytes <= 0)
-                    {
-                        close(fds[i].fd);
-                        _clients.erase(fds[i].fd);
-                    }
-                    else
-                    {
-                        std::map<int, Client>::iterator it = _clients.find(fds[i].fd);
-                        if (it != _clients.end())
-                        {
-                            it->second.read_buff.append(buffer, bytes);
-                            it->second.last_request = std::time(NULL);
-                        }
-                        if (it->second.read_buff.find("\r\n\r\n") != std::string::npos)
-                        {
-                            Request req;
-                            req.parse(it->second.read_buff);
-                            std::cout << "Method: "  << req.method  << "\n";
-                            std::cout << "Path: "    << req.path    << "\n";
-                            std::cout << "Version: " << req.version << "\n";
-                            for (std::map<std::string, std::string>::iterator it = req.headers.begin(); it != req.headers.end(); ++it)
-                                std::cout << "Header: " << it->first << " = " << it->second << "\n";
-                            std::cout << "Body: [" << req.req_body << "]\n";
-                        }
-                    }
+                    Request req;
+                    req.parse(client.read_buff);
+                    Response res;
+                    client.write_buff = res.build(200, "<h1>Hello from webserv!</h1>", "text/html");
+                    client.read_buff.clear();
+                    client.state = WRITING_RESPONCE;
+                }
+            }
+            else if (fds[i].revents & POLLOUT){
+                int bytes = send(client.fd, client.write_buff.c_str(), client.write_buff.size(), 0);
+                if (bytes <= 0){
+                    close(client.fd);
+                    _clients.erase(it);
+                    continue;
+                }
+                client.write_buff.erase(0, bytes);
+                if (client.write_buff.empty()){
+                    close(client.fd);
+                    _clients.erase(it);
                 }
             }
         }

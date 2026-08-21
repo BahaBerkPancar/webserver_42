@@ -76,6 +76,11 @@ ServerConfig Parser::parseServer() {
 
     expect(TOKEN_RBRACE);  // Expect "}"
 
+    for (size_t i = 0; i < server.listen.size(); ++i) {
+        if (server.listen[i].first.empty())
+            server.listen[i].first = server.host.empty() ? "0.0.0.0" : server.host;
+    }
+
     return server;
 }
 
@@ -111,6 +116,12 @@ void Parser::parseServerDirective(ServerConfig& server) {
         }//;
 
         server.listen.push_back(std::make_pair(host, port));
+    }
+    else if (dir == "host") {
+        // Parse: host <ip>;
+        Token hostToken = expect(TOKEN_WORD);
+        expect(TOKEN_SEMICOLON);
+        server.host = hostToken.value;
     }
     else if (dir == "client_max_body_size") {
         // Parse: client_max_body_size <size>;

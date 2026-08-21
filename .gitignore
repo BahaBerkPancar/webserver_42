@@ -1,0 +1,7 @@
+SESSION_STATE.md
+ACTION_LOG.md
+DECISIONS.md
+
+# Build artifacts
+.obj/
+webserv
