@@ -8,6 +8,9 @@
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <sys/stat.h>
+#include <fstream>
+#include <sstream>
 
 //;
 
@@ -85,6 +88,107 @@ std::vector <pollfd>Server_Manager::create_listener_fds(){
     return(ret);
 }
 
+std::string Server_Manager::getMimeType(const std::string &path){
+    size_t dot = path.find_last_of('.');
+    if (dot == std::string::npos)
+        return "application/octet-stream";
+    std::string ext = path.substr(dot);
+    if (ext == ".html" || ext == ".htm")
+        return "text/html";
+    if (ext == ".css") 
+        return "text/css";
+    if (ext == ".js")
+        return "application/javascript";
+    if (ext == ".json")
+        return "application/json";
+    if (ext == ".png")
+        return "image/png";
+    if (ext == ".jpg" || ext == ".jpeg") 
+        return "image/jpeg";
+    if (ext == ".gif")
+        return "image/gif";
+    if (ext == ".ico")
+        return "image/x-icon";
+    if (ext == ".txt")
+        return "text/plain";
+    return "application/octet-stream";
+}
+
+std::string Server_Manager::serveStatic(const LocationConfig &loc, const std::string &fsPath){
+    Response res;
+    struct stat st;
+    std::string target = fsPath;
+
+    if (stat(target.c_str(), &st) == -1)
+        return res.build(404, buildBody(404, statusText(404)), "text/html");
+
+    if (S_ISDIR(st.st_mode)){
+        if (loc.index.empty())
+            return res.build(403, buildBody(403, statusText(403)), "text/html");
+        if (!target.empty() && target[target.size() - 1] != '/')
+            target += "/";
+        target += loc.index;
+        if (stat(target.c_str(), &st) == -1 || S_ISDIR(st.st_mode))
+            return res.build(404, buildBody(404, statusText(404)), "text/html");
+    }
+
+    std::ifstream file(target.c_str(), std::ios::binary);
+    if (!file.is_open())
+        return res.build(404, buildBody(404, statusText(404)), "text/html");
+
+    std::ostringstream contents;
+    contents << file.rdbuf();
+    return res.build(200, contents.str(), getMimeType(target));
+}
+
+std::string Server_Manager::handleRequest(int serverIndex, Request &req){
+    Response res;
+    const ServerConfig &server = Conf.servers[serverIndex];
+    const LocationConfig *loc = router.match(server, req.path);
+
+    if (!loc)
+        return res.build(404, buildBody(404, statusText(404)), "text/html");
+
+    if (!loc->methods.empty()){
+        bool allowed = false;
+        for (size_t i = 0; i < loc->methods.size(); ++i){
+            if (loc->methods[i] == req.method){
+                allowed = true;
+                break;
+            }
+        }
+        if (!allowed)
+            return res.build(405, buildBody(405, statusText(405)), "text/html");
+    }
+
+    if (!loc->redirect.empty()){
+        std::istringstream iss(loc->redirect);
+        int code = 302;
+        std::string location;
+        iss >> code >> location;
+        return res.buildRedirect(code, location);
+    }
+
+    if (req.method == "GET"){
+        if (loc->root.empty())
+            return res.build(404, buildBody(404, statusText(404)), "text/html");
+
+        std::string subpath = req.path.substr(loc->path.size());
+        std::string fsPath = loc->root;
+        if (!fsPath.empty() && fsPath[fsPath.size() - 1] == '/')
+            fsPath.erase(fsPath.size() - 1);
+        if (!subpath.empty()){
+            if (subpath[0] != '/')
+                fsPath += "/";
+            fsPath += subpath;
+        }
+        return serveStatic(*loc, fsPath);
+    }
+
+    // POST / DELETE / other methods: static-serving groundwork only, not implemented yet.
+    return res.build(501, buildBody(501, statusText(501)), "text/html");
+}
+
 void Server_Manager::run(){
     running = true;
     std::vector <pollfd> listeners_fds = create_listener_fds();
@@ -144,9 +248,12 @@ void Server_Manager::run(){
                 if (client.read_buff.find("\r\n\r\n") != std::string::npos)
                 {
                     Request req;
-                    req.parse(client.read_buff);
-                    Response res;
-                    client.write_buff = res.build(200, "<h1>Hello from webserv!</h1>", "text/html");
+                    if (req.parse(client.read_buff))
+                        client.write_buff = handleRequest(client.index, req);
+                    else {
+                        Response res;
+                        client.write_buff = res.build(400, buildBody(400, statusText(400)), "text/html");
+                    }
                     client.read_buff.clear();
                     client.state = WRITING_RESPONCE;
                 }
